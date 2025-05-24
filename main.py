@@ -1,89 +1,112 @@
-# main.py
-
-import tkinter as tk
-from tkinter import messagebox, ttk, Toplevel
+import customtkinter as ctk
+from tkinter import ttk, messagebox
 from ad_connector import conectar_ad, usuario_existe_ad
 from username_generator import generar_usuario_disponible
 
 MAX_FILAS = 10
 
-# ------LOGIN--------
-def login():
-    def intentar_login(event=None):
-        user = entry_user.get().strip()
-        password = entry_pass.get().strip()
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+def centrar_ventana(ventana, ancho, alto):
+    ventana.update_idletasks()
+    x = (ventana.winfo_screenwidth() // 2) - (ancho // 2)
+    y = (ventana.winfo_screenheight() // 2) - (alto // 2)
+    ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.conn = None
+        self.resultados = []
+        self.entries = []
+        self.fuente = ("Segoe UI", 14)
+        self.title("Generador de Usuarios AD")
+        self.withdraw()  # Oculta la ventana principal hasta login exitoso
+        self.crear_login()
+        self.iconbitmap("logo.png")
+
+    def crear_login(self):
+        self.login_win = ctk.CTkToplevel(self)
+        self.login_win.title("Conexión Active Directory")
+        centrar_ventana(self.login_win, 370, 200)
+        self.login_win.resizable(False, False)
+        self.login_win.protocol("WM_DELETE_WINDOW", self.cerrar_todo)
+        self.login_win.grab_set()
+        self.login_win.focus_set()
+
+        frame = ctk.CTkFrame(self.login_win)#, fg_color="#2623C7")
+        frame.pack(expand=True, fill="both", padx=10, pady=10)
+
+        ctk.CTkLabel(frame, text="USUARIO:", font=self.fuente).grid(row=0, column=0, padx=10, pady=12)
+        self.entry_user = ctk.CTkEntry(frame, font=self.fuente, width=200)
+        self.entry_user.grid(row=0, column=1, padx=10, pady=12)
+
+        ctk.CTkLabel(frame, text="CONTRASEÑA:", font=self.fuente).grid(row=1, column=0, padx=10, pady=12)
+        self.entry_pass = ctk.CTkEntry(frame, show="*", font=self.fuente, width=200)
+        self.entry_pass.grid(row=1, column=1, padx=10, pady=12)
+
+        btn_login = ctk.CTkButton(
+            frame,
+            text="INGRESAR",
+            font=self.fuente,
+            width=90,     # ancho del botón en píxeles
+            height=40,     # alto del botón
+            corner_radius=10,  # esquinas redondeadas
+            command=self.intentar_login,
+            # fg_color="#e6e6e6",      # Azul oscuro (igual que el fondo)
+            # hover_color="#e6e6e6",    # Color al pasar el mouse (opcional)
+            # text_color="#050505"
+        )
+        btn_login.grid(row=2, column=1, columnspan=2, pady=20, sticky="nsew")
+
+        self.entry_user.focus_set()
+        self.login_win.bind('<Return>', lambda e: self.intentar_login())
+
+    def intentar_login(self):
+        user = self.entry_user.get().strip()
+        password = self.entry_pass.get().strip()
         if not user or not password:
             messagebox.showerror("Error", "Ingrese usuario y contraseña")
             return
         try:
-            global conn
-            conn = conectar_ad(user, password)
-            login_window.destroy()
-            abrir_ventana_principal()
+            self.conn = conectar_ad(user, password)
+            self.login_win.destroy()
+            self.deiconify()  # Muestra la ventana principal
+            self.crear_principal()
         except Exception as e:
-            messagebox.showerror("Error", f"Error de autenticacion:\n{e}")
+            messagebox.showerror("Error", f"Error de autenticación:\n{e}")
 
-    fuente = ("Segoe UI", 11)
-    login_window = tk.Tk()
-    login_window.title("Conexión Active Directory")
-    login_window.minsize(350, 170)
-    login_window.configure(padx=24, pady=24)
+    def crear_principal(self):
+        columnas = ["Nombre 1", "Nombre 2", "Apellido Paterno", "Apellido Materno"]
+        # Tamaño recomendado para que todo sea visible
+        centrar_ventana(self, 900, 520)
+        self.resizable(False, False)
 
-    tk.Label(login_window, text="Usuario:", font=fuente).grid(row=0, column=0, sticky="e", pady=7)
-    entry_user = tk.Entry(login_window, font=fuente)
-    entry_user.grid(row=0, column=1, sticky="we", pady=7)
+        for col, texto in enumerate(columnas):
+            ctk.CTkLabel(self, text=texto, font=self.fuente).grid(row=0, column=col, padx=8, pady=8)
 
-    tk.Label(login_window, text="Contraseña:", font=fuente).grid(row=1, column=0, sticky="e", pady=7)
-    entry_pass = tk.Entry(login_window, show="*", font=fuente)
-    entry_pass.grid(row=1, column=1, sticky="we", pady=7)
+        for fila in range(MAX_FILAS):
+            fila_entries = []
+            for col in range(len(columnas)):
+                entry = ctk.CTkEntry(self, font=self.fuente, width=180)
+                entry.grid(row=fila+1, column=col, padx=8, pady=4)
+                fila_entries.append(entry)
+            self.entries.append(fila_entries)
 
-    btn_login = tk.Button(login_window, text="Ingresar", font=fuente, command=intentar_login)
-    btn_login.grid(row=2,column=0, columnspan=2, pady=18, sticky="we")
+        btn_generar = ctk.CTkButton(self, text="Generar Usuarios", font=self.fuente, command=self.generar_usuarios)
+        btn_generar.grid(row=MAX_FILAS+2, column=0, columnspan=2, pady=18, sticky="we", padx=8)
 
-    login_window.grid_columnconfigure(1, weight=1)
-    entry_user.focus_set()
-    login_window.bind('<Return>', intentar_login)
-    centrar_ventana(login_window)
-    login_window.mainloop()
+        btn_cancelar = ctk.CTkButton(self, text="Cancelar", font=self.fuente, command=self.cerrar_todo)
+        btn_cancelar.grid(row=MAX_FILAS+2, column=2, columnspan=2, pady=18, sticky="we", padx=8)
 
-# ---------- CENTRAR VENTANA ----------
-def centrar_ventana(win):
-    win.update_idletasks()
-    ancho = win.winfo_width()
-    alto = win.winfo_height()
-    x = (win.winfo_screenwidth() // 2) - (ancho // 2)
-    y = (win.winfo_screenheight() // 2) - (alto // 2)
-    win.geometry(f"{ancho}x{alto}+{x}+{y}")
+        self.grid_columnconfigure(tuple(range(len(columnas))), weight=1)
+        self.entries[0][0].focus_set()
+        self.bind('<Return>', lambda e: self.generar_usuarios())
 
-# ---------- VENTANA PRINCIPAL ----------
-def abrir_ventana_principal():
-    resultados = []
-
-    fuente = ("Segoe UI", 11)
-    ventana = tk.Tk()
-    ventana.title("Generador de Usuarios AD")
-    ventana.minsize(650, 350)
-    ventana.configure(padx=24, pady=24)
-
-    columnas = ["Nombre 1", "Nombre 2", "Apellido Paterno", "Apellido Materno"]
-    entries = []
-
-    # Encabezados
-    for col, texto in enumerate(columnas):
-        tk.Label(ventana, text=texto, font=fuente).grid(row=0, column=col, padx=5, pady=5, sticky="we")
-
-    # Entradas (10 filas)
-    for fila in range(MAX_FILAS):
-        fila_entries = []
-        for col in range(len(columnas)):
-            entry = tk.Entry(ventana, font=fuente, width=18)
-            entry.grid(row=fila+1, column=col, padx=5, pady=3, sticky="we")
-            fila_entries.append(entry)
-        entries.append(fila_entries)
-
-    def generar_usuarios(event=None):
-        resultados.clear()
-        for fila_entries in entries:
+    def generar_usuarios(self):
+        self.resultados.clear()
+        for fila_entries in self.entries:
             nombre1 = fila_entries[0].get().strip()
             nombre2 = fila_entries[1].get().strip()
             ap_paterno = fila_entries[2].get().strip()
@@ -91,45 +114,35 @@ def abrir_ventana_principal():
             if nombre1 and ap_paterno and ap_materno:
                 usuario = generar_usuario_disponible(
                     nombre1, nombre2, ap_paterno, ap_materno,
-                    lambda u: usuario_existe_ad(conn, u)
+                    lambda u: usuario_existe_ad(self.conn, u)
                 )
                 nombre_completo = f"{nombre1.title()} {nombre2.title()} {ap_paterno.title()} {ap_materno.title()}".strip()
-                resultados.append((nombre_completo, usuario if usuario else "SIN DISPONIBILIDAD"))
-        if resultados:
-            mostrar_resultado()
+                self.resultados.append((nombre_completo, usuario if usuario else "SIN DISPONIBILIDAD"))
+        if self.resultados:
+            self.mostrar_resultado()
         else:
             messagebox.showwarning("Advertencia", "Debe completar al menos una fila con Nombre 1, Apellido Paterno y Materno.")
 
-    def mostrar_resultado():
-        ventana_resultado = tk.Toplevel(ventana)
+    def mostrar_resultado(self):
+        ventana_resultado = ctk.CTkToplevel(self)
         ventana_resultado.title("Usuarios Sugeridos")
-        ventana_resultado.minsize(400, 220)
-        ventana_resultado.configure(padx=14, pady=14)
-        ventana_resultado.grab_set()  # Modal
+        centrar_ventana(ventana_resultado, 500, 300)
+        ventana_resultado.grab_set()
 
-        # Permitir selección de filas completas
         tree = ttk.Treeview(
             ventana_resultado,
             columns=("Nombre Completo", "Usuario"),
             show="headings",
-            selectmode="extended"  # Permite seleccionar varias filas con Shift/Ctrl
+            selectmode="extended"
         )
         tree.heading("Nombre Completo", text="Nombre Completo")
         tree.heading("Usuario", text="Usuario")
-        tree.column("Nombre Completo", anchor="w", width=250)
-        tree.column("Usuario", anchor="center", width=120)
-        tree.pack(fill="both", expand=True)
+        tree.column("Nombre Completo", anchor="w", width=280)
+        tree.column("Usuario", anchor="center", width=140)
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-        for nombre, usuario in resultados:
+        for nombre, usuario in self.resultados:
             tree.insert("", "end", values=(nombre, usuario))
-
-        for i, (_, usuario) in enumerate(resultados):
-            if usuario == "SIN DISPONIBILIDAD":
-                tree.tag_configure("no_disp", foreground="red")
-                tree.item(tree.get_children()[i], tags=("no_disp",))
-            else:
-                tree.tag_configure("disp", foreground="green")
-                tree.item(tree.get_children()[i], tags=("disp",))
 
         def copiar_celda(event):
             region = tree.identify("region", event.x, event.y)
@@ -141,78 +154,32 @@ def abrir_ventana_principal():
                     col_index = int(col.replace("#", "")) - 1
                     if 0 <= col_index < len(values):
                         valor = values[col_index]
-                        ventana_resultado.clipboard_clear()
-                        ventana_resultado.clipboard_append(valor)
-                        ventana_resultado.update()
+                        try:
+                            ventana_resultado.clipboard_clear()
+                            ventana_resultado.clipboard_append(valor)
+                        except Exception:
+                            pass
 
         def copiar_seleccion(event=None):
-            # Solo copia si el foco está en el treeview
             if ventana_resultado.focus_get() == tree:
                 selected = tree.selection()
                 if selected:
                     texto = "\n".join(
                         ["\t".join(tree.item(item, 'values')) for item in selected]
                     )
-                    ventana_resultado.clipboard_clear()
-                    ventana_resultado.clipboard_append(texto)
-                    ventana_resultado.update()
-                return "break"  # Evita que el evento siga propagándose
+                    try:
+                        ventana_resultado.clipboard_clear()
+                        ventana_resultado.clipboard_append(texto)
+                    except Exception:
+                        pass
+                return "break"
 
-        # Solo copia si el foco está en el treeview
         tree.bind("<Control-c>", copiar_seleccion)
         tree.bind("<Double-1>", copiar_celda)
 
+    def cerrar_todo(self):
+        self.destroy()
 
-    # Botones
-    btn_generar = tk.Button(ventana, text="Generar Usuario", font=fuente, command=generar_usuarios)
-    btn_generar.grid(row=MAX_FILAS+2, column=0, columnspan=2, pady=18, sticky="we", padx=5)
-
-    btn_cancelar = tk.Button(ventana, text="Cancelar", font=fuente, command=ventana.destroy)
-    btn_cancelar.grid(row=MAX_FILAS+2, column=2, columnspan=2, pady=18, sticky="we", padx=5)
-
-    ventana.grid_columnconfigure(tuple(range(len(columnas))), weight=1)
-    entries[0][0].focus_set()
-    ventana.bind('<Return>', generar_usuarios)
-    centrar_ventana(ventana)
-    ventana.mainloop()
-
-# ---------- INICIO ----------
 if __name__ == "__main__":
-    login()
-
-# import csv
-# from username_generator import generar_usuario_disponible
-# from ad_connector import conectar_ad, usuario_existe_ad
-
-# input_path = 'data/empleados.csv'
-# output_path = 'output/usuarios_generados.csv'
-
-# conn = conectar_ad()  # Conexión al AD
-# resultado = []
-
-# with open(input_path, newline='', encoding='utf-8') as csvfile:
-#     reader = csv.DictReader(csvfile)
-#     for row in reader:
-#         nombre1 = row['Nombre1'].strip()
-#         nombre2 = row['Nombre2'].strip()
-#         ap_paterno = row['ApellidoPaterno'].strip()
-#         ap_materno = row['ApellidoMaterno'].strip()
-
-#         usuario = generar_usuario_disponible(
-#             nombre1, nombre2, ap_paterno, ap_materno,
-#             lambda u: usuario_existe_ad(conn, u)
-#         )
-
-#         resultado.append({
-#             "NombreCompleto": f"{nombre1} {nombre2} {ap_paterno} {ap_materno}",
-#             "UsuarioSugerido": usuario if usuario else "SIN DISPONIBILIDAD"
-#         })
-
-# # Guardar resultados
-# with open(output_path, 'w', newline='', encoding='utf-8') as outfile:
-#     fieldnames = ['NombreCompleto', 'UsuarioSugerido']
-#     writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-#     writer.writeheader()
-#     writer.writerows(resultado)
-
-# print("✅ Consulta contra Active Directory completada.")
+    app = App()
+    app.mainloop()
