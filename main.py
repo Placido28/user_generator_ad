@@ -147,6 +147,14 @@ class App(ctk.CTk):
         ).pack(pady=(0, 12))
 
     def crear_principal(self):
+        import re
+
+        def solo_letras(caracter):
+            # Permite letras, tildes y espacios
+            return bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]*", caracter))
+
+        vcmd = (self.register(solo_letras), "%P")
+        
         columnas = ["Nombre 1", "Nombre 2", "Apellido Paterno", "Apellido Materno"]
         centrar_ventana(self, 900, 580)
         self.resizable(False, False)
@@ -193,18 +201,24 @@ class App(ctk.CTk):
                     width=180,
                     border_width=1,
                     corner_radius=6,
-                    fg_color=color_fila,  # Fondo del campo
-                    text_color="#1B1B1B"  
+                    fg_color=color_fila,
+                    text_color="#1B1B1B",
+                    validate="key",
+                    validatecommand=vcmd
                 )
                 entry.grid(row=fila + 2, column=col, padx=8, pady=4)
                 fila_entries.append(entry)
 
             self.entries.append(fila_entries)
         # ------------------ BOTONES ------------------
+        botones_frame = ctk.CTkFrame(self, fg_color="transparent")
+        botones_frame.grid(row=MAX_FILAS + 3, column=0, columnspan=4, pady=20, sticky="we")
+        botones_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
         btn_generar = ctk.CTkButton(
-            self,
+            botones_frame,
             text="Generar Usuarios",
-            font=("Segoe UI", 16,"bold"),
+            font=("Segoe UI", 16, "bold"),
             fg_color="#FBC02D",
             hover_color="#FBA22D",
             text_color="white",
@@ -213,12 +227,26 @@ class App(ctk.CTk):
             corner_radius=10,
             command=self.generar_usuarios
         )
-        btn_generar.grid(row=MAX_FILAS + 3, column=0, columnspan=2, pady=20, sticky="we", padx=8)
+        btn_generar.grid(row=0, column=0, padx=16, sticky="we")
+
+        btn_limpiar = ctk.CTkButton(
+            botones_frame,
+            text="Limpiar",
+            font=("Segoe UI", 16, "bold"),
+            fg_color="#B0BEC5",
+            hover_color="#90A4AE",
+            text_color="black",
+            width=150,
+            height=40,
+            corner_radius=10,
+            command=self.limpiar_celdas
+        )
+        btn_limpiar.grid(row=0, column=1, padx=16, sticky="we")
 
         btn_cancelar = ctk.CTkButton(
-            self,
+            botones_frame,
             text="Cancelar",
-            font=("Segoe UI", 16,"bold"),
+            font=("Segoe UI", 16, "bold"),
             fg_color="#1565C0",
             hover_color="#043E80",
             text_color="white",
@@ -227,26 +255,40 @@ class App(ctk.CTk):
             corner_radius=10,
             command=self.cerrar_todo
         )
-        btn_cancelar.grid(row=MAX_FILAS + 3, column=2, columnspan=2, pady=20, sticky="we", padx=8)
+        btn_cancelar.grid(row=0, column=2, padx=16, sticky="we")
 
         self.grid_columnconfigure(tuple(range(len(columnas))), weight=1)
         self.entries[0][0].focus_set()
         self.bind('<Return>', lambda e: self.generar_usuarios())
 
+
+    def limpiar_celdas(self):
+        for fila_entries in self.entries:
+            for entry in fila_entries:
+                entry.delete(0, tk.END)
+        self.entries[0][0].focus_set()
+
     def generar_usuarios(self):
         self.resultados.clear()
+        usuarios_generados = set()  # 🆕 Para guardar usuarios únicos en esta sesión
+
         for fila_entries in self.entries:
             nombre1 = fila_entries[0].get().strip()
             nombre2 = fila_entries[1].get().strip()
             ap_paterno = fila_entries[2].get().strip()
             ap_materno = fila_entries[3].get().strip()
+
             if nombre1 and ap_paterno and ap_materno:
                 usuario = generar_usuario_disponible(
                     nombre1, nombre2, ap_paterno, ap_materno,
-                    lambda u: usuario_existe_ad(self.conn, u)
+                    lambda u: usuario_existe_ad(self.conn, u) or u in usuarios_generados
                 )
+                if usuario:
+                    usuarios_generados.add(usuario)  # 🆕 Marca este usuario como usado
+
                 nombre_completo = f"{nombre1.title()} {nombre2.title()} {ap_paterno.title()} {ap_materno.title()}".strip()
                 self.resultados.append((nombre_completo, usuario if usuario else "SIN DISPONIBILIDAD"))
+
         if self.resultados:
             self.mostrar_resultado()
         else:

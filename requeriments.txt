@@ -1,4 +1,4 @@
 ldap3
-customtkinter
 tkinter
+customtkinter
 pillow
