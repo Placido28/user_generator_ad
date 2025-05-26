@@ -1,4 +1,3 @@
-# username_generator.py
 import unicodedata
 
 def limpiar_texto(texto):
@@ -39,24 +38,17 @@ def generar_combinaciones(nombre1, nombre2, ap_paterno, ap_materno):
 def generar_usuario_disponible(nombre1, nombre2, ap_paterno, ap_materno, existe_func):
     combinaciones = generar_combinaciones(nombre1, nombre2, ap_paterno, ap_materno)
 
-    print(f"🔍 Probando combinaciones para {nombre1} {nombre2} {ap_paterno} {ap_materno}")
-
     # Probar las combinaciones iniciales
     for username in combinaciones:
-        print(f"➡️ Probando: {username}")
         if not existe_func(username):
-            print(f"✅ Usuario disponible: {username}")
             return username
-        else:
-            print(f"❌ Ya existe: {username}")
+        
 
     # Si todas están ocupadas, agregar sufijos numéricos
     base = combinaciones[0] if combinaciones else f"{nombre1[0]}{ap_paterno}".lower()
     i = 1
     while True:
         nuevo_username = f"{base}{i}"
-        print(f"➡️ Probando con sufijo: {nuevo_username}")
         if not existe_func(nuevo_username):
-            print(f"✅ Usuario disponible: {nuevo_username}")
             return nuevo_username
         i += 1
