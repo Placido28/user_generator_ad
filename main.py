@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
+import os
 from tkinter import messagebox
 from PIL import Image
 from ad_connector import conectar_ad, usuario_existe_ad
@@ -7,6 +8,8 @@ from username_generator import generar_usuario_disponible
 from ventana_resultado import VentanaResultado
 
 MAX_FILAS = 10
+RUTA_BASE = os.path.dirname(__file__)
+ruta_logo = os.path.join(RUTA_BASE, "logo_prymera.png")
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -25,8 +28,8 @@ class App(ctk.CTk):
         self.entries = []
         self.fuente = ("Segoe UI", 14)
         self.title("Generador de Usuarios AD")
-        self.logo_img_main = ctk.CTkImage(Image.open("logo_prymera.png"), size=(80, 45))
-        self.logo_img_login = ctk.CTkImage(Image.open("logo_prymera.png"), size=(120, 70))
+        self.logo_img_main = ctk.CTkImage(Image.open(ruta_logo), size=(80, 45))
+        self.logo_img_login = ctk.CTkImage(Image.open(ruta_logo), size=(120, 70))
         self.withdraw()  # Oculta la ventana principal hasta login exitoso
         self.crear_login()
 
