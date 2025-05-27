@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import os
+import sys
 import pandas as pd
 from tkinter import messagebox
 from PIL import Image
@@ -11,6 +12,14 @@ from ventana_resultado import VentanaResultado
 MAX_FILAS = 10
 RUTA_BASE = os.path.dirname(__file__)
 ruta_logo = os.path.join(RUTA_BASE, "logo_prymera.png")
+
+def ruta_recurso(rel_path):
+    try:
+        base_path = sys._MEIPASS  # cuando está en un .exe
+    except AttributeError:
+        base_path = os.path.abspath(".")  # cuando se ejecuta como script
+
+    return os.path.join(base_path, rel_path)
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -35,12 +44,12 @@ class App(ctk.CTk):
         self.crear_login()
 
         try:
-            df_inactivos = pd.read_csv("data/usuarios_inactivos.csv", encoding='utf-8')  # Reemplaza con la ruta real
+            ruta_csv = ruta_recurso("data/usuarios_inactivos.csv")
+            df_inactivos = pd.read_csv(ruta_csv, encoding='utf-8')
             self.codigos_inactivos = set(df_inactivos['COD_USR'].dropna().astype(str).str.strip())
-            #print("Codigos inactivos cargados:", self.codigos_inactivos)
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo cargar el archivo de usuarios inactivos:\n{e}")
-            self.codigos_inactivos = set()   
+            self.codigos_inactivos = set()  
 
     def crear_login(self):
         self.login_win = ctk.CTkToplevel(self)
