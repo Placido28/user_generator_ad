@@ -120,7 +120,7 @@ class App(ctk.CTk):
             self.deiconify()  # Muestra la ventana principal
             self.crear_principal()
         except Exception as e:
-            messagebox.showerror("Error", f"Error de autenticación:\n{e}")
+            messagebox.showerror("Error", f"Error de autenticación:\nUsuario o contraseña incorrectos.")
             self.entry_pass.delete(0, tk.END)  # Borra solo la contraseña
             self.entry_pass.focus()  # Enfoca el campo para volver a escribir
     
