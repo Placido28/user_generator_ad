@@ -98,4 +98,4 @@ user_generator_ad/
 ### AUTOR
 Cristopher Placido Ocaña
 Desarrollador backend - Automatización TI
-> [GitHub]([https://github.com/Fosowl](https://github.com/Placido28?tab=repositories)) | > [https://www.linkedin.com/in/cristopher-placido-oca%C3%B1a/](LinkedIn) 
+[GitHub]([https://github.com/Fosowl](https://github.com/Placido28?tab=repositories)) | [LinkedIn](https://www.linkedin.com/in/cristopher-placido-oca%C3%B1a/) 
