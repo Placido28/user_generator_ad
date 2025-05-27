@@ -1,5 +1,4 @@
 pandas
 ldap3
-tkinter
 customtkinter
 pillow
