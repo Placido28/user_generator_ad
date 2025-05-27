@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import os
+import pandas as pd
 from tkinter import messagebox
 from PIL import Image
 from ad_connector import conectar_ad, usuario_existe_ad
@@ -32,6 +33,14 @@ class App(ctk.CTk):
         self.logo_img_login = ctk.CTkImage(Image.open(ruta_logo), size=(120, 70))
         self.withdraw()  # Oculta la ventana principal hasta login exitoso
         self.crear_login()
+
+        try:
+            df_inactivos = pd.read_csv("data/usuarios_inactivos.csv", encoding='utf-8')  # Reemplaza con la ruta real
+            self.codigos_inactivos = set(df_inactivos['COD_USR'].dropna().astype(str).str.strip())
+            #print("Codigos inactivos cargados:", self.codigos_inactivos)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo cargar el archivo de usuarios inactivos:\n{e}")
+            self.codigos_inactivos = set()   
 
     def crear_login(self):
         self.login_win = ctk.CTkToplevel(self)
@@ -270,7 +279,8 @@ class App(ctk.CTk):
 
     def generar_usuarios(self):
         self.resultados.clear()
-        usuarios_generados = set()  # 🆕 Para guardar usuarios únicos en esta sesión
+        usuarios_generados = set()
+        codigos_generados = set()
 
         for fila_entries in self.entries:
             nombre1 = fila_entries[0].get().strip()
@@ -278,16 +288,34 @@ class App(ctk.CTk):
             ap_paterno = fila_entries[2].get().strip()
             ap_materno = fila_entries[3].get().strip()
 
-            if nombre1 and ap_paterno and ap_materno:
-                usuario = generar_usuario_disponible(
-                    nombre1, nombre2, ap_paterno, ap_materno,
-                    lambda u: usuario_existe_ad(self.conn, u) or u in usuarios_generados
-                )
-                if usuario:
-                    usuarios_generados.add(usuario)  # 🆕 Marca este usuario como usado
+            if not (nombre1 and ap_paterno and ap_materno):
+                continue  # Saltar filas incompletas
 
-                nombre_completo = f"{nombre1.title()} {nombre2.title()} {ap_paterno.title()} {ap_materno.title()}".strip()
-                self.resultados.append((nombre_completo, usuario if usuario else "SIN DISPONIBILIDAD"))
+            def es_valido(usuario):
+                if usuario in usuarios_generados:
+                    return False
+                if usuario_existe_ad(self.conn, usuario):
+                    return False
+                codigo = usuario[:6].lower()
+                if codigo in self.codigos_inactivos or codigo in codigos_generados:
+                    return False
+                return True
+
+            usuario = generar_usuario_disponible(
+                nombre1, nombre2, ap_paterno, ap_materno,
+                es_valido
+            )
+
+            if usuario:
+                codigo_final = usuario[:6].lower()
+                usuarios_generados.add(usuario)
+                codigos_generados.add(codigo_final)
+            else:
+                usuario = "SIN DISPONIBILIDAD"
+                codigo_final = "N/A"
+
+            nombre_completo = f"{nombre1.title()} {nombre2.title()} {ap_paterno.title()} {ap_materno.title()}".strip()
+            self.resultados.append((nombre_completo, usuario, codigo_final))
 
         if self.resultados:
             self.mostrar_resultado()

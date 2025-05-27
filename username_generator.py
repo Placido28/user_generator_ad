@@ -35,20 +35,21 @@ def generar_combinaciones(nombre1, nombre2, ap_paterno, ap_materno):
     return combinaciones
 
 
-def generar_usuario_disponible(nombre1, nombre2, ap_paterno, ap_materno, existe_func):
+def generar_usuario_disponible(nombre1, nombre2, ap_paterno, ap_materno, es_valido):
     combinaciones = generar_combinaciones(nombre1, nombre2, ap_paterno, ap_materno)
 
-    # Probar las combinaciones iniciales
+    # Probar combinaciones iniciales
     for username in combinaciones:
-        if not existe_func(username):
+        if es_valido(username):
             return username
-        
 
-    # Si todas están ocupadas, agregar sufijos numéricos
+    # Si todas fallan, intentar con sufijos numéricos
     base = combinaciones[0] if combinaciones else f"{nombre1[0]}{ap_paterno}".lower()
     i = 1
-    while True:
+    while i <= 50:  # evita bucle infinito
         nuevo_username = f"{base}{i}"
-        if not existe_func(nuevo_username):
+        if es_valido(nuevo_username):
             return nuevo_username
         i += 1
+
+    return None 

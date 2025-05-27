@@ -30,13 +30,16 @@ class VentanaResultado(ctk.CTkToplevel):
         ctk.CTkLabel(contenedor, text="Resultados Generados", font=("Segoe UI", 20, "bold"), text_color="#1976D2").pack(pady=(10, 15))
 
         # TREEVIEW
-        self.tree = ttk.Treeview(contenedor, columns=("Nombre", "Usuario"), show="headings", height=10)
+        self.tree = ttk.Treeview(contenedor, columns=("Nombre", "Usuario", "Codigo"), show="headings", height=10)
         self.tree.heading("Nombre", text="Nombre Completo")
         self.tree.heading("Usuario", text="Usuario")
+        self.tree.heading("Codigo", text="Código")
         self.tree.column("Nombre", width=330, anchor="w")
         self.tree.column("Usuario", width=150, anchor="center")
+        self.tree.column("Codigo", width=100, anchor="center")
         self.tree.bind("<Double-1>", self.copiar_celda)
         self.tree.bind("<Control-c>", self.copiar_seleccion)
+
 
         style = ttk.Style()
         style.theme_use("default")
@@ -46,9 +49,9 @@ class VentanaResultado(ctk.CTkToplevel):
         self.tree.pack(fill="x", padx=10, pady=5)
 
         # ZEBRA STRIPES
-        for i, (nombre, usuario) in enumerate(resultados):
+        for i, (nombre, usuario, codigo) in enumerate(resultados):
             tag = "evenrow" if i % 2 == 0 else "oddrow"
-            self.tree.insert("", "end", values=(nombre, usuario), tags=(tag,))
+            self.tree.insert("", "end", values=(nombre, usuario, codigo), tags=(tag,))
         self.tree.tag_configure("evenrow", background="#E3F2FD")
         self.tree.tag_configure("oddrow", background="#ffffff")
 
@@ -80,9 +83,9 @@ class VentanaResultado(ctk.CTkToplevel):
             try:
                 with open(ruta, mode="w", newline="", encoding="utf-8") as f:
                     writer = csv.writer(f)
-                    writer.writerow(["Nombre Completo", "Usuario"])
-                    for nombre, usuario in self.resultados:
-                        writer.writerow([nombre, usuario])
+                    writer.writerow(["Nombre Completo", "Usuario", "Código"])
+                    for nombre, usuario, codigo in self.resultados:
+                        writer.writerow([nombre, usuario, codigo])
                 messagebox.showinfo("Exportado", f"Archivo CSV guardado en:\n{ruta}")
             except Exception as e:
                 messagebox.showerror("Error", f"No se pudo guardar el archivo:\n{e}")
