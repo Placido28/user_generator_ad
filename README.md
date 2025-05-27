@@ -91,6 +91,11 @@ user_generator_ad/
 * Pillow para manejo de imágenes
 
 ### Notas de seguridad
-No subas archivos sensibles ni credenciales reales al repositorio.
+* No subas archivos sensibles ni credenciales reales al repositorio.
 
-El archivo usuarios_inactivos.csv contiene solo códigos de usuario, sin datos personales identificables.
+* El archivo usuarios_inactivos.csv contiene solo códigos de usuario, sin datos personales identificables.
+
+### AUTOR
+Cristopher Placido Ocaña
+Desarrollador backend - Automatización TI
+> [GitHub]([https://github.com/Fosowl](https://github.com/Placido28?tab=repositories)) | > [https://www.linkedin.com/in/cristopher-placido-oca%C3%B1a/](LinkedIn) 
