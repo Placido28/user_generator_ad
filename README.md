@@ -29,4 +29,11 @@ Este proyecto proporciona una aplicación de escritorio desarrollada en Python q
 1. Clona el repositorio:
 ```bash
 git clone [https://github.com/tu_usuario/user_generator_ad.git](https://github.com/Placido28/user_generator_ad.git)
-cd user_generator_ad
+cd user_generator_ad 
+
+2. Crea un entorno virtual (opcional):
+
+```bash
+Copiar
+Editar
+
